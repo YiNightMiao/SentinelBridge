@@ -1,16 +1,19 @@
 import { readFileSync } from "node:fs";
+import { randomUUID } from "node:crypto";
 import type { Pool } from "pg";
-import type { OneBotMessageEvent } from "./onebot-event.js";
+import type { OneBotEvent } from "./onebot-event.js";
 
 export type ClaimedDelivery = {
   id: string;
   event_id: string;
   lease_token: string;
   attempts: number;
-  payload: OneBotMessageEvent;
+  payload: OneBotEvent;
 };
 
-export function eventDedupeKey(event: OneBotMessageEvent): string {
+export function eventDedupeKey(event: OneBotEvent): string {
+  if (event.post_type === "request") return `request:${event.self_id}:${event.request_type}:${event.flag}`;
+  if (event.post_type !== "message") return `unkeyed:${randomUUID()}`;
   const conversation = event.message_type === "group" ? `group:${event.group_id}` : `private:${event.user_id}`;
   return `${event.self_id}:${conversation}:${event.message_id}`;
 }
@@ -24,7 +27,7 @@ export class EventStore {
   }
 
   /** An event is accepted only after both event and delivery records COMMIT. */
-  async ingest(event: OneBotMessageEvent): Promise<{ accepted: boolean; id: string | null }> {
+  async ingest(event: OneBotEvent): Promise<{ accepted: boolean; id: string | null }> {
     const client = await this.pool.connect();
     try {
       await client.query("BEGIN");

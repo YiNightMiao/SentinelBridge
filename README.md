@@ -4,13 +4,13 @@
 
 > **Status:** Working MVP implementation: OneBot WebSocket ingestion, PostgreSQL event outbox, concurrent leased delivery workers, webhook delivery, and integration tests. Not production-hardened; no verified performance or uptime claims.
 
-SentinelBridge is a proposed, open-source TypeScript infrastructure service for reliably ingesting OneBot v11 events, persisting accepted events, and delivering them to downstream automation services with observable recovery behavior. It is designed for use with NapCat but keeps the ingestion protocol boundary explicit.
+SentinelBridge is an open-source TypeScript infrastructure service for reliably ingesting OneBot v11 events, persisting accepted events, and delivering them to downstream automation services with observable recovery behavior. It is designed for use with NapCat but keeps the ingestion protocol boundary explicit.
 
 **License:** Apache License 2.0 (see [`LICENSE`](LICENSE)).
 
 ## Runnable MVP (implemented)
 
-The current implementation ingests **OneBot v11 private/group message events** from a WebSocket, validates them with Zod, stores accepted events transactionally in PostgreSQL, and delivers them to a configured HTTP webhook using leased workers with retries and dead-letter status. Other event families are not yet supported.
+The current implementation ingests **OneBot v11 message (private/group), notice, request, and meta events** from a WebSocket; validates them with Zod; commits accepted events and delivery records transactionally to PostgreSQL; and sends them to a configured HTTP webhook using leased workers with bounded retries and dead-letter status. Message IDs and request flags enable stable deduplication where available; unkeyed event families are not guaranteed deduplicated.
 
 Prerequisites: Node.js 22 and Corepack/pnpm. To run locally:
 
@@ -20,7 +20,7 @@ pnpm install
 pnpm typecheck
 pnpm test
 pnpm build
-echo '{"time":1730000000,"self_id":12345,"post_type":"message","message_type":"private","sub_type":"friend","message_id":42,"user_id":67890,"message":"Hello"}' | pnpm start
+echo '{"time":1730000000,"self_id":12345,"post_type":"message","message_type":"private","sub_type":"friend","message_id":42,"user_id":67890,"message":"Hello"}' | pnpm validate
 ```
 
 For the sample event, run `pnpm validate` instead of `pnpm start`. Expected CLI output:
@@ -29,7 +29,7 @@ For the sample event, run `pnpm validate` instead of `pnpm start`. Expected CLI 
 {"valid":true,"post_type":"message","message_type":"private","message_id":42}
 ```
 
-The legacy CLI is still available as `pnpm validate` after compilation (not `pnpm start`). To start the gateway use `pnpm start` after setting `DATABASE_URL`, `ONEBOT_WS_URL` and `WEBHOOK_URL`. See [operations](docs/OPERATIONS.md) for Docker Compose, endpoints, security, and limitations. CI runs unit tests, PostgreSQL/WebSocket integration tests, typecheck, build and a Docker image build. Toxiproxy partition scenarios and performance benchmarks are **not yet implemented**.
+The legacy CLI is still available as `pnpm validate` after compilation (not `pnpm start`). To start the gateway use `pnpm start` after setting `DATABASE_URL`, `ONEBOT_WS_URL` and `WEBHOOK_URL`. See [operations](docs/OPERATIONS.md) for Docker Compose, endpoints, security, and limitations. CI runs unit tests, PostgreSQL/WebSocket integration tests, typecheck, build and a Docker image build. A Toxiproxy bidirectional half-open network partition test runs in CI; operator dead-letter redrive is available via `pnpm redrive <event-uuid>`. Performance benchmarks are **not yet implemented**.
 
 ## Why this project?
 
@@ -60,7 +60,7 @@ NapCat / OneBot v11 WebSocket
    PostgreSQL durable ingest
             |
             v
-  Queue / worker leasing (future phase)
+  Queue / worker leasing (implemented)
   (SKIP LOCKED, retries, dead-letter queue)
             |
             v
@@ -116,8 +116,8 @@ These are **design choices**, not already-installed dependencies.
 
 ### Follow-up milestones (not Day 1)
 
-- **M2 — Delivery:** Lease-based PostgreSQL workers, bounded retries with jitter, dead-letter handling, downstream idempotency keys.
-- **M3 — Resilience:** Deterministic Toxiproxy failure scenarios in PR checks, separately seeded randomized chaos tests nightly.
+- **M2 — Delivery (implemented MVP):** Lease-based PostgreSQL workers, bounded retries with jitter, dead-letter handling, downstream idempotency keys.
+- **M3 — Resilience (partially implemented):** Deterministic half-open Toxiproxy test in CI; hard-disconnect, worker-crash fault injection and seeded nightly chaos scenarios remain future work.
 - **M4 — Observability:** OpenTelemetry instrumentation, actionable metrics, Grafana dashboards, performance benchmarks, threat model.
 
 ### CI test philosophy
@@ -131,10 +131,12 @@ Do **not** infer end-to-end exactly-once processing from a passing test. Validat
 - [x] Project architecture and Day 1 specification documented.
 - [x] Minimal TypeScript/Zod validator, CLI, test scaffold, and CI workflow committed.
 - [x] MVP WebSocket ingestion, PostgreSQL outbox, HTTP webhook workers, status endpoints and integration tests.
-- [ ] Production hardening, WebSocket fault injection, and performance benchmarks.
+- [x] Deterministic Toxiproxy half-open connection tests and dead-letter redrive CLI.
+- [ ] Production hardening, wider fault injection, and performance benchmarks.
 - [x] CI, real PostgreSQL integration tests, and mock WebSocket tests.
-- [ ] Durable delivery workers.
-- [ ] Fault-injection benchmark evidence.
+- [x] Durable delivery workers with SKIP LOCKED, lease fencing, and bounded retries.
+- [x] Reproducible half-open network partition and recovery CI test.
+- [ ] Quantitative benchmark and sustained load evidence.
 - [ ] Production deployment (requires human review).
 
 Contributions and technical reviews are welcome once the initial implementation lands.

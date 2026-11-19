@@ -39,7 +39,7 @@ An upstream OneBot WebSocket does not offer a guaranteed replay mechanism; messa
 
 ## Security and deployment limits
 
-The gateway stores message payload JSONB, potentially including sensitive chat text. Restrict database access and retention; do not expose PostgreSQL to the public network. Use HTTPS for production webhook destinations, a strong `WEBHOOK_SECRET` and HMAC signature validation, network policies, and source WebSocket authentication as provided by NapCat. Health/metrics endpoints have no built-in authentication and must stay on loopback or behind trusted access controls. A public deployment requires a separate threat-model/security review.
+The gateway accepts message/notice/request/meta_event families; events without stable upstream identifiers use per-ingestion UUIDs and may be duplicated on reconnect. The gateway stores event payload JSONB, potentially including sensitive chat text. Restrict database access and retention; do not expose PostgreSQL to the public network. Use HTTPS for production webhook destinations, a strong `WEBHOOK_SECRET` and HMAC signature validation, network policies, and source WebSocket authentication as provided by NapCat. Health/metrics endpoints have no built-in authentication and must stay on loopback or behind trusted access controls. A public deployment requires a separate threat-model/security review.
 
 ## Testing
 

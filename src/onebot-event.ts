@@ -37,3 +37,21 @@ export type OneBotMessageEvent = z.infer<typeof oneBotMessageEventSchema>;
 export function validateOneBotMessageEvent(input: unknown) {
   return oneBotMessageEventSchema.safeParse(input);
 }
+
+const eventBase = {
+  time: z.number().int().nonnegative(),
+  self_id: nonnegativeId,
+};
+
+/** Other standard OneBot v11 event families. Vendor-specific fields survive. */
+export const oneBotEventSchema = z.union([
+  oneBotMessageEventSchema,
+  z.object({ ...eventBase, post_type: z.literal("notice"), notice_type: z.string().min(1) }).passthrough(),
+  z.object({ ...eventBase, post_type: z.literal("request"), request_type: z.string().min(1), flag: z.string().min(1) }).passthrough(),
+  z.object({ ...eventBase, post_type: z.literal("meta_event"), meta_event_type: z.string().min(1) }).passthrough(),
+]);
+
+export type OneBotEvent = z.infer<typeof oneBotEventSchema>;
+export function validateOneBotEvent(input: unknown) {
+  return oneBotEventSchema.safeParse(input);
+}

@@ -1,5 +1,5 @@
 import WebSocket, { type RawData } from "ws";
-import { validateOneBotMessageEvent } from "./onebot-event.js";
+import { validateOneBotEvent } from "./onebot-event.js";
 import type { EventStore } from "./db.js";
 import type { Metrics } from "./metrics.js";
 
@@ -85,7 +85,7 @@ export class OneBotSource {
       this.metrics.increment("sentinel_invalid_total");
       return;
     }
-    const parsed = validateOneBotMessageEvent(value);
+    const parsed = validateOneBotEvent(value);
     if (!parsed.success) {
       this.metrics.increment("sentinel_invalid_total");
       return;
