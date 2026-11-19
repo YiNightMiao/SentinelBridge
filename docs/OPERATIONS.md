@@ -35,7 +35,7 @@ An upstream OneBot WebSocket does not offer a guaranteed replay mechanism; messa
 - 408 / 429 / 5xx / transport errors: bounded exponential retry (with jitter)
 - Other 4xx: dead letter
 - Exceeded `MAX_ATTEMPTS`: dead letter
-- Dead letters: inspect `deliveries` and `events` in PostgreSQL; no automatic replay UI yet.
+- Dead letters: inspect `deliveries` and `events` in PostgreSQL; use `pnpm redrive <event-uuid>` from a trusted operator shell after inspecting a dead job; there is no unauthenticated replay HTTP endpoint.
 
 ## Security and deployment limits
 
