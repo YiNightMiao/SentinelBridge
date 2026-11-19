@@ -1,0 +1,36 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: sentinel
+      POSTGRES_PASSWORD: sentinel_dev_only
+      POSTGRES_DB: sentinel
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sentinel -d sentinel"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+  gateway:
+    build: .
+    environment:
+      DATABASE_URL: postgresql://sentinel:sentinel_dev_only@postgres:5432/sentinel
+      ONEBOT_WS_URL: ${ONEBOT_WS_URL:-ws://host.docker.internal:3001}
+      WEBHOOK_URL: ${WEBHOOK_URL:-http://host.docker.internal:9000/events}
+      WEBHOOK_SECRET: ${WEBHOOK_SECRET:-}
+      HOST: 0.0.0.0
+      PORT: 8080
+      WORKERS: 2
+      LEASE_MS: 30000
+      WEBHOOK_TIMEOUT_MS: 10000
+    ports:
+      - "127.0.0.1:8080:8080"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+volumes:
+  postgres_data:

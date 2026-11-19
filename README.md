@@ -2,15 +2,15 @@
 
 **A fault-tolerant event gateway for OneBot v11 and NapCat.**
 
-> **Status:** Minimal TypeScript/Zod validation scaffold committed. This is **not** a live WebSocket gateway, durable event store, or production deployment.
+> **Status:** Working MVP implementation: OneBot WebSocket ingestion, PostgreSQL event outbox, concurrent leased delivery workers, webhook delivery, and integration tests. Not production-hardened; no verified performance or uptime claims.
 
 SentinelBridge is a proposed, open-source TypeScript infrastructure service for reliably ingesting OneBot v11 events, persisting accepted events, and delivering them to downstream automation services with observable recovery behavior. It is designed for use with NapCat but keeps the ingestion protocol boundary explicit.
 
 **License:** Apache License 2.0 (see [`LICENSE`](LICENSE)).
 
-## Runnable validation scaffold (Day 1 initial commit)
+## Runnable MVP (implemented)
 
-The first executable slice validates **OneBot v11 message events only**: private/group message variants, required fields, and CQ message segments. It does not yet connect to NapCat or persist events.
+The current implementation ingests **OneBot v11 private/group message events** from a WebSocket, validates them with Zod, stores accepted events transactionally in PostgreSQL, and delivers them to a configured HTTP webhook using leased workers with retries and dead-letter status. Other event families are not yet supported.
 
 Prerequisites: Node.js 22 and Corepack/pnpm. To run locally:
 
@@ -23,13 +23,13 @@ pnpm build
 echo '{"time":1730000000,"self_id":12345,"post_type":"message","message_type":"private","sub_type":"friend","message_id":42,"user_id":67890,"message":"Hello"}' | pnpm start
 ```
 
-Expected CLI output for the sample event:
+For the sample event, run `pnpm validate` instead of `pnpm start`. Expected CLI output:
 
 ```json
 {"valid":true,"post_type":"message","message_type":"private","message_id":42}
 ```
 
-The CLI returns a nonzero exit status for malformed or unsupported input. For privacy, it prints a summary rather than raw message content. Tests live in `tests/onebot-event.test.ts`; CI runs typecheck, Vitest and build. **No network fault-injection, persistent queue, or measured reliability metrics are implemented yet.**
+The legacy CLI is still available as `pnpm validate` after compilation (not `pnpm start`). To start the gateway use `pnpm start` after setting `DATABASE_URL`, `ONEBOT_WS_URL` and `WEBHOOK_URL`. See [operations](docs/OPERATIONS.md) for Docker Compose, endpoints, security, and limitations. CI runs unit tests, PostgreSQL/WebSocket integration tests, typecheck, build and a Docker image build. Toxiproxy partition scenarios and performance benchmarks are **not yet implemented**.
 
 ## Why this project?
 
@@ -130,8 +130,9 @@ Do **not** infer end-to-end exactly-once processing from a passing test. Validat
 
 - [x] Project architecture and Day 1 specification documented.
 - [x] Minimal TypeScript/Zod validator, CLI, test scaffold, and CI workflow committed.
-- [ ] Full gateway bootstrap implementation.
-- [ ] Automated CI and isolated integration tests.
+- [x] MVP WebSocket ingestion, PostgreSQL outbox, HTTP webhook workers, status endpoints and integration tests.
+- [ ] Production hardening, WebSocket fault injection, and performance benchmarks.
+- [x] CI, real PostgreSQL integration tests, and mock WebSocket tests.
 - [ ] Durable delivery workers.
 - [ ] Fault-injection benchmark evidence.
 - [ ] Production deployment (requires human review).
