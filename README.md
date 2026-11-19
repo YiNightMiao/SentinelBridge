@@ -2,11 +2,34 @@
 
 **A fault-tolerant event gateway for OneBot v11 and NapCat.**
 
-> **Status:** Architecture / Day 1 bootstrap specification. This repository does **not** yet contain a working gateway, a deployed service, or verified benchmark results.
+> **Status:** Minimal TypeScript/Zod validation scaffold committed. This is **not** a live WebSocket gateway, durable event store, or production deployment.
 
 SentinelBridge is a proposed, open-source TypeScript infrastructure service for reliably ingesting OneBot v11 events, persisting accepted events, and delivering them to downstream automation services with observable recovery behavior. It is designed for use with NapCat but keeps the ingestion protocol boundary explicit.
 
 **License:** Apache License 2.0 (see [`LICENSE`](LICENSE)).
+
+## Runnable validation scaffold (Day 1 initial commit)
+
+The first executable slice validates **OneBot v11 message events only**: private/group message variants, required fields, and CQ message segments. It does not yet connect to NapCat or persist events.
+
+Prerequisites: Node.js 22 and Corepack/pnpm. To run locally:
+
+```bash
+corepack enable
+pnpm install
+pnpm typecheck
+pnpm test
+pnpm build
+echo '{"time":1730000000,"self_id":12345,"post_type":"message","message_type":"private","sub_type":"friend","message_id":42,"user_id":67890,"message":"Hello"}' | pnpm start
+```
+
+Expected CLI output for the sample event:
+
+```json
+{"valid":true,"post_type":"message","message_type":"private","message_id":42}
+```
+
+The CLI returns a nonzero exit status for malformed or unsupported input. For privacy, it prints a summary rather than raw message content. Tests live in `tests/onebot-event.test.ts`; CI runs typecheck, Vitest and build. **No network fault-injection, persistent queue, or measured reliability metrics are implemented yet.**
 
 ## Why this project?
 
@@ -106,7 +129,8 @@ Do **not** infer end-to-end exactly-once processing from a passing test. Validat
 ## Project status
 
 - [x] Project architecture and Day 1 specification documented.
-- [ ] Bootstrap implementation.
+- [x] Minimal TypeScript/Zod validator, CLI, test scaffold, and CI workflow committed.
+- [ ] Full gateway bootstrap implementation.
 - [ ] Automated CI and isolated integration tests.
 - [ ] Durable delivery workers.
 - [ ] Fault-injection benchmark evidence.
