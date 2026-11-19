@@ -16,7 +16,8 @@
     "test:watch": "vitest",
     "start": "node dist/main.js",
     "validate": "node dist/index.js",
-    "redrive": "node dist/admin.js"
+    "redrive": "node dist/admin.js",
+    "test:chaos": "vitest run tests/toxiproxy.test.ts"
   },
   "dependencies": {
     "fastify": "^5.6.0",

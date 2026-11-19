@@ -42,3 +42,17 @@ jobs:
         run: pnpm build
       - name: Docker build
         run: docker build -t sentinelbridge:test .
+      - name: Start Toxiproxy
+        run: |
+          docker run -d --name sentinel-toxiproxy --network host ghcr.io/shopify/toxiproxy:2.13.0
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:8474/proxies > /dev/null; then exit 0; fi
+            sleep 1
+          done
+          docker logs sentinel-toxiproxy
+          exit 1
+      - name: Verify half-open connection recovery with Toxiproxy
+        env:
+          TOXIPROXY_API_URL: http://127.0.0.1:8474
+        run: pnpm test:chaos
+

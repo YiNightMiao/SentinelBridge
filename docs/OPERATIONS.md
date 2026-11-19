@@ -45,4 +45,4 @@ The gateway stores message payload JSONB, potentially including sensitive chat t
 
 The GitHub Actions CI provisions PostgreSQL and runs real database and mock WebSocket integration tests, plus typecheck and Docker build. Run locally with `TEST_DATABASE_URL=...` to include database tests. Unit tests run without PostgreSQL.
 
-Toxiproxy partition tests, dead-letter replay API, automatic schema version migrations, Prometheus/Grafana integration, production security hardening, and throughput benchmarks are **not implemented** in this version. They remain backlog work; do not treat operational targets in the architecture proposal as measured results.
+The CI also runs a deterministic Toxiproxy bidirectional timeout=0 network-blackhole test. A privileged dead-letter redrive CLI is available. Automatic schema-version migrations, Grafana dashboards, production security hardening, and throughput benchmarks are **not implemented** in this version. They remain backlog work; do not treat operational targets in the architecture proposal as measured results.
