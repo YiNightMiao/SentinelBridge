@@ -6,7 +6,7 @@
 
 SentinelBridge is a proposed, open-source TypeScript infrastructure service for reliably ingesting OneBot v11 events, persisting accepted events, and delivering them to downstream automation services with observable recovery behavior. It is designed for use with NapCat but keeps the ingestion protocol boundary explicit.
 
-**License:** Apache License 2.0 (see `LICENSE` once added).
+**License:** Apache License 2.0 (see [`LICENSE`](LICENSE)).
 
 ## Why this project?
 
